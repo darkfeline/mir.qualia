@@ -1,0 +1,11 @@
+machine:
+  python:
+    version: 3.5.1
+dependencies:
+  override:
+    - pip3 install -r requirements.txt
+    - python3 setup.py develop
+test:
+  override:
+    - py.test
+    - bash <(curl -s https://codecov.io/bash)
