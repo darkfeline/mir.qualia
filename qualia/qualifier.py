@@ -50,33 +50,38 @@ class Qualifier:
 
 class Activator:
 
+    """Activates and deactivates lines, given a comment prefix.
+
+    >>> activator = Activator('#')
+    >>> activator.activate(['#export EDITOR=vi'])
+    ['export EDITOR=vi']
+    >>> activator.deactivate(['export EDITOR=vi'])
+    ['#export EDITOR=vi']
+
+    """
+
     def __init__(self, comment_prefix):
         self.comment_prefix = comment_prefix
+        self._prefix_pattern = re.compile(r'^{}\s*'.format(comment_prefix))
 
     def __repr__(self):
         return '{cls}({this.comment_prefix!r})}'.format(
             cls=type(self).__qualname__, this=self)
 
-    @property
-    def comment_prefix(self):
-        return self._comment_prefix
-
-    @comment_prefix.setter
-    def comment_prefix(self, comment_prefix):
-        self._comment_prefix = comment_prefix
-        self._prefix_pattern = re.compile(r'^{}\s*'.format(comment_prefix))
-
     def is_active(self, lines):
+        """Return True if not all lines are commented."""
         pattern = self._prefix_pattern
         return not all(pattern.search(line) for line in lines)
 
     def activate(self, lines):
+        """Activate (uncomment) lines."""
         pattern = self._prefix_pattern
         while not self.is_active(lines):
            lines = [pattern.sub('', line) for line in lines]
         return lines
 
     def deactivate(self, lines):
+        """Deactivate (comment) lines."""
         if self.is_active(lines):
             prefix = self.comment_prefix
             lines = [prefix + line for line in lines]
