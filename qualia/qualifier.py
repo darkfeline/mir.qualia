@@ -19,7 +19,7 @@ class Qualifier:
 
     def __call__(self, lines):
         state_handlers = self._STATE_HANDLERS
-        state = 'normal'
+        state = _START_STATE
         while True:
             if state in state_handlers:
                 yielded_lines, state = state_handlers[state](self, lines)
@@ -33,8 +33,11 @@ class Qualifier:
         except StopIteration:
             return _DONE_RESULT
         else:
-            match = self._BEGIN_PATTERN.search(line)
-            ...
+            match = _BEGIN_PATTERN.search(line)
+            if match is None:
+                return _StateResult((line,), 'normal')
+            else:
+                ...
 
     def _handle_in_block_state(self, lines):
         ...
@@ -45,11 +48,14 @@ class Qualifier:
     }
 
 
-class QualifiedBlock:
+class Activator:
 
-    def __init__(self, comment_prefix, lines):
+    def __init__(self, comment_prefix):
         self.comment_prefix = comment_prefix
-        self.lines = lines
+
+    def __repr__(self):
+        return '{cls}({this.comment_prefix!r})}'.format(
+            cls=type(self).__qualname__, this=self)
 
     @property
     def comment_prefix(self):
@@ -60,17 +66,18 @@ class QualifiedBlock:
         self._comment_prefix = comment_prefix
         self._prefix_pattern = re.compile(r'^{}\s*'.format(comment_prefix))
 
-    @property
-    def active(self):
+    def is_active(self, lines):
         pattern = self._prefix_pattern
-        return not all(pattern.search(line) for line in self.lines)
+        return not all(pattern.search(line) for line in lines)
 
-    def activate(self):
+    def activate(self, lines):
         pattern = self._prefix_pattern
-        while not self.active:
-            self.lines = [pattern.sub('', line) for line in self.lines]
+        while not self.is_active(lines):
+           lines = [pattern.sub('', line) for line in lines]
+        return lines
 
-    def inactivate(self):
-        if self.active:
+    def deactivate(self, lines):
+        if self.is_active(lines):
             prefix = self.comment_prefix
-            self.lines = [prefix + line for line in self.lines]
+            lines = [prefix + line for line in lines]
+        return lines
