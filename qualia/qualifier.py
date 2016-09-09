@@ -61,7 +61,8 @@ class IteratorMonad:
 
     def bind(self, iterable):
         """Bind iterable to monad."""
-        return IteratorMonad(itertools.chain(self.iterator, iterable))
+        self.iterator = itertools.chain(self.iterator, iterable)
+        return self
 
 
 class CommentPrefix:
