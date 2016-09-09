@@ -1,6 +1,10 @@
 __pycache__/
 *.egg-info/
 
+# Build artifacts
+/build/
+/dist/
+
 # Test artifacts
 /.cache/
 /.coverage
