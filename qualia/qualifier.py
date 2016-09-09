@@ -14,8 +14,9 @@ _DONE_RESULT = _StateResult((), _DONE_STATE)
 
 class Qualifier:
 
-    def __init__(self, quality):
-        self.quality = quality
+    def __init__(self, qualities, initial_state=_START_STATE):
+        self.qualities = qualities
+        self.state = initial_state
 
     def __call__(self, lines):
         state_handlers = self._STATE_HANDLERS
@@ -48,15 +49,19 @@ class Qualifier:
     }
 
 
-class Activator:
+class CommentPrefix:
 
-    """Activates and deactivates lines, given a comment prefix.
+    """Comments and uncomments lines, given a prefix.
 
-    >>> activator = Activator('#')
-    >>> activator.activate(['#export EDITOR=vi'])
+    >>> prefix = CommentPrefix('#')
+    >>> prefix.uncomment(['#export EDITOR=vi'])
     ['export EDITOR=vi']
-    >>> activator.deactivate(['export EDITOR=vi'])
+    >>> prefix.comment(['export EDITOR=vi'])
     ['#export EDITOR=vi']
+    >>> prefix.is_commented(['export EdITOR=vi'])
+    False
+
+    Do not modify the comment_prefix attribute on an instance.
 
     """
 
@@ -68,21 +73,21 @@ class Activator:
         return '{cls}({this.comment_prefix!r})}'.format(
             cls=type(self).__qualname__, this=self)
 
-    def is_active(self, lines):
-        """Return True if not all lines are commented."""
+    def is_commented(self, lines):
+        """Return True if all lines are commented."""
         pattern = self._prefix_pattern
-        return not all(pattern.search(line) for line in lines)
+        return all(pattern.search(line) for line in lines)
 
-    def activate(self, lines):
-        """Activate (uncomment) lines."""
+    def uncomment(self, lines):
+        """Uncomment lines."""
         pattern = self._prefix_pattern
-        while not self.is_active(lines):
+        while self.is_commented(lines):
            lines = [pattern.sub('', line) for line in lines]
         return lines
 
-    def deactivate(self, lines):
-        """Deactivate (comment) lines."""
-        if self.is_active(lines):
+    def comment(self, lines):
+        """Comment lines."""
+        if not self.is_commented(lines):
             prefix = self.comment_prefix
             lines = [prefix + line for line in lines]
         return lines
