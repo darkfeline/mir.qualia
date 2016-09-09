@@ -7,7 +7,7 @@ setup(
     version='0.1.0',
     packages=find_packages(),
     entry_points={
-        'qualia': 'qualia',
+        'qualia': 'qualia.__main__:main',
     },
 
     author='Allen Li',
