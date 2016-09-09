@@ -3,6 +3,11 @@ import pytest
 from qualia import qualifier
 
 
+def test_string():
+    prefix = qualifier.CommentPrefix('#')
+    assert str(prefix) == '#'
+
+
 @pytest.mark.parametrize(
     'comment_prefix,lines,is_commented', [
         ('#', ['foo', 'bar'], False),
