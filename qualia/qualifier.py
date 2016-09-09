@@ -1,15 +1,10 @@
-import collections
+import itertools
 import re
 
 _START_STATE = 'normal'
 _DONE_STATE = 'done'
 _BEGIN_PATTERN = re.compile(r'^(?P<prefix>\S+) BEGIN (?P<quality>\S+)')
 _END_PATTERN = re.compile(r'^(?P<prefix>\S+) END (?P<quality>\S+)')
-
-_StateResult = collections.namedtuple(
-    '_StateResult', 'lines state')
-
-_DONE_RESULT = _StateResult((), _DONE_STATE)
 
 
 class Qualifier:
@@ -20,19 +15,16 @@ class Qualifier:
 
     def __call__(self, lines):
         state_handlers = self._STATE_HANDLERS
-        state = _START_STATE
-        while True:
-            if state in state_handlers:
-                yielded_lines, state = state_handlers[state](self, lines)
-                yield from yielded_lines
-            else:
-                break
+        while self.state in state_handlers:
+            yielded_lines = state_handlers[self.state](self, lines)
+            yield from yielded_lines
 
     def _handle_normal_state(self, lines):
         try:
             line = next(lines)
         except StopIteration:
-            return _DONE_RESULT
+            self.state = _DONE_STATE
+            return ()
         else:
             match = _BEGIN_PATTERN.search(line)
             if match is None:
@@ -47,6 +39,29 @@ class Qualifier:
         'normal': _handle_normal_state,
         'in_block': _handle_in_block_state,
     }
+
+
+class IteratorMonad:
+
+    """Iterator monad.
+
+    >>> list(IteratorMonad(range(2)).bind([1, 0]).bind(range(2)))
+    [0, 1, 1, 0, 0, 1]
+
+    Since Python isn't a pure functional language, this isn't a real monad.
+    Iterator state is shared between bound instances.
+
+    """
+
+    def __init__(self, iterable=()):
+        self.iterator = iter(iterable)
+
+    def __iter__(self):
+        return self.iterator
+
+    def bind(self, iterable):
+        """Bind iterable to monad."""
+        return IteratorMonad(itertools.chain(self.iterator, iterable))
 
 
 class CommentPrefix:
