@@ -2,9 +2,6 @@
 
 [run]
 branch = True
-omit =
-  setup.py
-  build
 
 [report]
 exclude_lines =
