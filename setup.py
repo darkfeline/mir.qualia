@@ -11,7 +11,6 @@ setup(
     url='https://github.com/darkfeline/mir.qualia',
     author='Allen Li',
     author_email='darkfeline@felesatra.moe',
-    license='',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
