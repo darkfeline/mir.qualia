@@ -1,6 +1,6 @@
 import pytest
 
-from qualia import qualifier
+from mir.qualia import qualifier
 
 
 def test_string():

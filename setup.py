@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
 setup(
-    name='qualia',
+    name='mir.qualia',
     version='0.1.0',
-    packages=find_packages(exclude=['qualia_tests*']),
-    entry_points={
-        'console_scripts': [
-            'qualia = qualia.__main__:main',
-        ]
-    },
-
+    description='Enable sections of config files for different machines.',
+    long_description='',
+    keywords='',
+    url='https://github.com/darkfeline/mir.qualia',
     author='Allen Li',
     author_email='darkfeline@felesatra.moe',
-    description='',
     license='',
-    url='',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Programming Language :: Python :: 3.5',
+    ],
+
+    packages=['mir.qualia'],
+    entry_points={
+        'console_scripts': [
+            'qualia = mir.qualia.__main__:main',
+        ],
+    },
 )
