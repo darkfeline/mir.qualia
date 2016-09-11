@@ -14,7 +14,8 @@ class Qualifier:
             cls=type(self).__qualname__, this=self)
 
     def __call__(self, lines):
-        processor = self._processer()
+        processor = self._processor()
+        next(processor)
         self._queue = queue = IteratorQueue()
         for line in lines:
             processor.send(line)
@@ -24,12 +25,10 @@ class Qualifier:
         begin_pattern = self._BEGIN_PATTERN
         while True:
             line = yield
+            self._queue.extend([line])
             match = begin_pattern.search(line)
-            if match is None:
-                self._queue.extend([line])
-            else:
-                attrs = _BlockAttributes(
-                    match.group('prefix', 'quality'))
+            if match:
+                attrs = _BlockAttributes(*match.group('prefix', 'quality'))
                 yield from self._process_qualified_block(attrs)
 
     def _process_qualified_block(self, attrs):
@@ -43,6 +42,7 @@ class Qualifier:
                 block_lines.append(line)
             else:
                 self._close_qualified_block(attrs, block_lines)
+                self._queue.extend([line])
                 break
 
     def _close_qualified_block(self, attrs, block_lines):
