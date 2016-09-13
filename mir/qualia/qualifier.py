@@ -204,7 +204,7 @@ class _CommentPrefix:
         """
         pattern = self._prefix_pattern
         while self.is_commented(lines):
-            lines = [pattern.sub('\g<indent>', line) for line in lines]
+            lines = [pattern.sub(r'\g<indent>', line) for line in lines]
         return lines
 
     def comment(self, lines):
