@@ -70,7 +70,7 @@ class Qualifier:
 
         """
         block_lines = []
-        pattern = self._get_end_pattern(attrs)
+        pattern = _get_end_pattern(attrs)
         while True:
             line = yield
             if line is self._EOF:
@@ -85,17 +85,6 @@ class Qualifier:
                     self._output_queue.append(line)
                     break
 
-    @functools.lru_cache(maxsize=8)
-    def _get_end_pattern(self, attrs):
-        """Get compiled RE pattern for given block attributes.
-
-        Args:
-            attrs: A _BlockAttributes instance.
-
-        """
-        return re.compile(r'{attrs.prefix}\s+END\s+{attrs.quality}'.format(
-            attrs=attrs))
-
     def _close_qualified_block(self, attrs, block_lines):
         """Emit the lines of the parse qualified block according to qualities.
 
@@ -109,6 +98,18 @@ class Qualifier:
             self._output_queue.extend(prefix.uncomment(block_lines))
         else:
             self._output_queue.extend(prefix.comment(block_lines))
+
+
+@functools.lru_cache(maxsize=8)
+def _get_end_pattern(attrs):
+    """Get compiled RE end pattern for given block attributes.
+
+    Args:
+        attrs: A _BlockAttributes instance.
+
+    """
+    return re.compile(r'{attrs.prefix}\s+END\s+{attrs.quality}'.format(
+        attrs=attrs))
 
 
 _BlockAttributes = collections.namedtuple(
