@@ -29,7 +29,7 @@ class Qualifier:
         self.qualities = qualities
 
     def __repr__(self):
-        return '{cls}(qualities={this.qualities!r})}'.format(
+        return '{cls}(qualities={this.qualities!r})'.format(
             cls=type(self).__qualname__, this=self)
 
     def __call__(self, lines):
