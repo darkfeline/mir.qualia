@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='mir.qualia',
-    version='0.3.0',
+    version='0.4.0',
     description='Dynamically enable sections of config files.',
     long_description='',
     keywords='',

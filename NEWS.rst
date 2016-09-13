@@ -3,6 +3,14 @@ Release notes
 
 This project uses `semantic versioning <http://semver.org/>`_.
 
+0.4.0
+-----
+
+Changed
+^^^^^^^
+
+- Qualified blocks now preserve indentation.
+
 0.3.0
 -----
 

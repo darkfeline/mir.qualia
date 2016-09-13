@@ -26,7 +26,8 @@ class Qualifier:
 
     """
 
-    _BEGIN_PATTERN = re.compile(r'^(?P<prefix>\S+)\s+BEGIN\s+(?P<quality>\S+)')
+    _BEGIN_PATTERN = re.compile(
+        r'^(?P<prefix>\s*\S+)\s+BEGIN\s+(?P<quality>\S+)')
     _EOF = object()
 
     def __init__(self, qualities):
@@ -152,14 +153,14 @@ class _IteratorQueue:
 
 class _CommentPrefix:
 
-    """Comments and uncomments lines, given a prefix.
+    r"""Comments and uncomments lines, given a prefix.
 
     >>> prefix = _CommentPrefix('#')
-    >>> prefix.uncomment(['#export EDITOR=vi'])
-    ['export EDITOR=vi']
-    >>> prefix.comment(['export EDITOR=vi'])
-    ['#export EDITOR=vi']
-    >>> prefix.is_commented(['export EdITOR=vi'])
+    >>> prefix.uncomment(['#export EDITOR=vi\n'])
+    ['export EDITOR=vi\n']
+    >>> prefix.comment(['export EDITOR=vi\n'])
+    ['#export EDITOR=vi\n']
+    >>> prefix.is_commented(['export EDITOR=vi\n'])
     False
 
     Do not modify the comment_prefix attribute on an instance.
@@ -183,7 +184,25 @@ class _CommentPrefix:
         return all(pattern.search(line) for line in lines)
 
     def uncomment(self, lines):
-        """Uncomment lines."""
+        r"""Uncomment lines.
+
+        This will keep uncommenting so long as the lines are all commented.
+        This is so that uncommenting is an idempotent operation.
+
+        >>> prefix = _CommentPrefix('#')
+        >>> prefix.uncomment(['##foo\n', '##bar\n'])
+        ['foo\n', 'bar\n']
+        >>> prefix.uncomment(prefix.uncomment(['##foo\n', '##bar\n']))
+        ['foo\n', 'bar\n']
+
+        In almost all cases, this is desired behavior, but if you need to
+        preserve levels of commenting, include a line to protect them:
+
+        >>> prefix = _CommentPrefix('#')
+        >>> prefix.uncomment(['##foo\n', '##bar\n', '#\n'])
+        ['#foo\n', '#bar\n', '\n']
+
+        """
         pattern = self._prefix_pattern
         while self.is_commented(lines):
             lines = [pattern.sub('', line) for line in lines]

@@ -25,9 +25,16 @@ def test_is_commented(comment_prefix, lines, is_commented):
         ('#', ['foo', 'bar'], ['foo', 'bar']),
         ('#', ['foo', '#bar'], ['foo', '#bar']),
         ('#', ['#foo', '#bar'], ['foo', 'bar']),
+
+        # Uncomment multiple times
+        ('#', ['##foo', '###bar'], ['foo', '#bar']),
+
+        # Comment with indentation
+        (' #', [' #foo', '#bar'], [' #foo', '#bar']),
+        (' #', [' #foo', ' #bar'], ['foo', 'bar']),
+
+        # Preserving whitespace after comment
         ('#', ['#foo', '# bar'], ['foo', ' bar']),
-        ('#', ['## foo', '# bar'], ['# foo', ' bar']),
-        ('#', ['## foo', '### bar'], [' foo', '# bar']),
     ])
 def test_uncomment(comment_prefix, lines, expected_lines):
     prefix = qualifier._CommentPrefix(comment_prefix)
@@ -37,10 +44,11 @@ def test_uncomment(comment_prefix, lines, expected_lines):
 @pytest.mark.parametrize(
     'comment_prefix,lines,expected_lines', [
         ('#', ['foo', 'bar'], ['#foo', '#bar']),
+        ('#', ['#foo', '#bar'], ['#foo', '#bar']),
+
+        # Keep whitespace
         ('#', ['foo', ' bar'], ['#foo', '# bar']),
-        ('#', ['foo', '# bar'], ['#foo', '## bar']),
-        ('#', ['#foo', '# bar'], ['#foo', '# bar']),
-        ('#', ['#foo', '## bar'], ['#foo', '## bar']),
+        (' #', ['foo', 'bar'], [' #foo', ' #bar']),
     ])
 def test_comment(comment_prefix, lines, expected_lines):
     prefix = qualifier._CommentPrefix(comment_prefix)
