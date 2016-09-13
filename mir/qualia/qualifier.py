@@ -1,10 +1,33 @@
+"""qualifier module.
+
+
+"""
+
 import collections
+import functools
+import itertools
 import re
 
 
 class Qualifier:
 
+    """Qualify lines.
+
+    A Qualifier takes lines of text that may contain qualified blocks of the form::
+
+       # BEGIN quality_name
+       lines in block
+       # END quality_name
+
+    and either comments or uncomments the contents of the blocks depending on
+    the qualities of the Qualifier instance.
+
+    Qualifier is implemented as a generator, so processing is done lazily.
+
+    """
+
     _BEGIN_PATTERN = re.compile(r'^(?P<prefix>\S+)\s+BEGIN\s+(?P<quality>\S+)')
+    _EOF = object()
 
     def __init__(self, qualities):
         self.qualities = qualities
@@ -16,48 +39,89 @@ class Qualifier:
     def __call__(self, lines):
         processor = self._processor()
         next(processor)
-        self._queue = queue = IteratorQueue()
-        for line in lines:
+        self._output_queue = output_queue = _IteratorQueue()
+        for line in itertools.chain(lines, [self._EOF]):
             processor.send(line)
-            yield from queue
+            yield from output_queue
 
     def _processor(self):
-        begin_pattern = self._BEGIN_PATTERN
+        """State machine coroutine.
+
+        This implements the state machine for parsing and transforming
+        qualified blocks using coroutines.
+
+        """
         while True:
             line = yield
-            self._queue.extend([line])
-            match = begin_pattern.search(line)
-            if match:
-                attrs = _BlockAttributes(*match.group('prefix', 'quality'))
-                yield from self._process_qualified_block(attrs)
+            if line is self._EOF:
+                break
+            else:
+                yield from self._process_line(line)
+
+    def _process_line(self, line):
+        """Process single line in the normal state."""
+        self._output_queue.append(line)
+        match = self._BEGIN_PATTERN.search(line)
+        if match:
+            attrs = _BlockAttributes(*match.group('prefix', 'quality'))
+            yield from self._process_qualified_block(attrs)
 
     def _process_qualified_block(self, attrs):
+        """Process lines in a qualified block.
+
+        Args:
+            attrs: A _BlockAttributes instance.
+
+        """
         block_lines = []
-        pattern = re.compile(r'{attrs.prefix}\s+END\s+{attrs.quality}'.format(
-            attrs=attrs))
+        pattern = self._get_end_pattern(attrs)
         while True:
             line = yield
-            match = pattern.search(line)
-            if match is None:
-                block_lines.append(line)
-            else:
-                self._close_qualified_block(attrs, block_lines)
-                self._queue.extend([line])
+            if line is self._EOF:
+                self._output_queue.extend(block_lines)
                 break
+            else:
+                match = pattern.search(line)
+                if match is None:
+                    block_lines.append(line)
+                else:
+                    self._close_qualified_block(attrs, block_lines)
+                    self._output_queue.append(line)
+                    break
+
+    @functools.lru_cache(maxsize=8)
+    def _get_end_pattern(self, attrs):
+        """Get compiled RE pattern for given block attributes.
+
+        Args:
+            attrs: A _BlockAttributes instance.
+
+        """
+        return re.compile(r'{attrs.prefix}\s+END\s+{attrs.quality}'.format(
+            attrs=attrs))
 
     def _close_qualified_block(self, attrs, block_lines):
-        prefix = CommentPrefix(attrs.prefix)
+        """Emit the lines of the parse qualified block according to qualities.
+
+        Args:
+            attrs: A _BlockAttributes instance.
+            block_lines: A list of strings, the lines inside the block.
+
+        """
+        prefix = _CommentPrefix(attrs.prefix)
         if attrs.quality in self.qualities:
-            self._queue.extend(prefix.uncomment(block_lines))
+            self._output_queue.extend(prefix.uncomment(block_lines))
         else:
-            self._queue.extend(prefix.comment(block_lines))
+            self._output_queue.extend(prefix.comment(block_lines))
 
 
 _BlockAttributes = collections.namedtuple(
     '_BlockAttributes', 'prefix quality')
 
 
-class IteratorQueue:
+class _IteratorQueue:
+
+    """A queue that accessed via iteration."""
 
     def __init__(self, iterable=()):
         self.queue = collections.deque(iterable)
@@ -77,15 +141,20 @@ class IteratorQueue:
         else:
             raise StopIteration
 
+    def append(self, obj):
+        """Add object to the queue."""
+        self.queue.append(obj)
+
     def extend(self, iterable):
+        """Add objects in the given iterable to the queue."""
         self.queue.extend(iterable)
 
 
-class CommentPrefix:
+class _CommentPrefix:
 
     """Comments and uncomments lines, given a prefix.
 
-    >>> prefix = CommentPrefix('#')
+    >>> prefix = _CommentPrefix('#')
     >>> prefix.uncomment(['#export EDITOR=vi'])
     ['export EDITOR=vi']
     >>> prefix.comment(['export EDITOR=vi'])
@@ -99,7 +168,7 @@ class CommentPrefix:
 
     def __init__(self, comment_prefix):
         self.comment_prefix = comment_prefix
-        self._prefix_pattern = re.compile(r'^{}\s*'.format(comment_prefix))
+        self._prefix_pattern = re.compile(r'^{}'.format(comment_prefix))
 
     def __str__(self):
         return self.comment_prefix

@@ -42,6 +42,15 @@ eggs
 # END eggs
 """.splitlines(True)
 
+_UNCLOSED_TEXT = """\
+# BEGIN spam
+#spam
+
+# BEGIN eggs
+#eggs
+# END eggs
+""".splitlines(True)
+
 
 @pytest.mark.parametrize(
     'qualities,lines,expected', [
@@ -49,6 +58,7 @@ eggs
         (['spam'], _BASE_TEXT, _SPAM_TEXT),
         (['eggs'], _BASE_TEXT, _EGGS_TEXT),
         (['spam', 'eggs'], _BASE_TEXT, _FULL_TEXT),
+        (['spam', 'eggs'], _UNCLOSED_TEXT, _UNCLOSED_TEXT),
     ])
 def test_qualifier(qualities, lines, expected):
     qual = qualifier.Qualifier(qualities)
