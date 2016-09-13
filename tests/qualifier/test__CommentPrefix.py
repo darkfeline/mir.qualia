@@ -22,18 +22,17 @@ def test_is_commented(comment_prefix, lines, is_commented):
 
 @pytest.mark.parametrize(
     'comment_prefix,lines,expected_lines', [
+        # Uncommenting is idempotent.
         ('#', ['foo', 'bar'], ['foo', 'bar']),
+        # Uncommenting only works if all lines are commented.
         ('#', ['foo', '#bar'], ['foo', '#bar']),
+        # Regular uncommenting.
         ('#', ['#foo', '#bar'], ['foo', 'bar']),
-
-        # Uncomment multiple times
+        # Uncomment multiple times to be idempotent.
         ('#', ['##foo', '###bar'], ['foo', '#bar']),
-
-        # Comment with indentation
-        (' #', [' #foo', '#bar'], [' #foo', '#bar']),
-        (' #', [' #foo', ' #bar'], ['foo', 'bar']),
-
-        # Preserving whitespace after comment
+        # Preserve indentation before prefix.
+        ('#', [' #foo', ' #bar'], [' foo', ' bar']),
+        # Preserve indentation after prefix.
         ('#', ['#foo', '# bar'], ['foo', ' bar']),
     ])
 def test_uncomment(comment_prefix, lines, expected_lines):
@@ -43,12 +42,14 @@ def test_uncomment(comment_prefix, lines, expected_lines):
 
 @pytest.mark.parametrize(
     'comment_prefix,lines,expected_lines', [
+        # Commenting.
         ('#', ['foo', 'bar'], ['#foo', '#bar']),
+        # Commenting is idempotent.
         ('#', ['#foo', '#bar'], ['#foo', '#bar']),
-
-        # Keep whitespace
+        # Commenting preserves indentation.
         ('#', ['foo', ' bar'], ['#foo', '# bar']),
-        (' #', ['foo', 'bar'], [' #foo', ' #bar']),
+        # Commenting "moves past" common indentation.
+        ('#', [' foo', '  bar'], [' #foo', ' # bar']),
     ])
 def test_comment(comment_prefix, lines, expected_lines):
     prefix = qualifier._CommentPrefix(comment_prefix)

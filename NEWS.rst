@@ -3,6 +3,14 @@ Release notes
 
 This project uses `semantic versioning <http://semver.org/>`_.
 
+0.5.0
+-----
+
+Fixed
+^^^^^
+
+- Indentation wasn't implemented correctly.
+
 0.4.0
 -----
 

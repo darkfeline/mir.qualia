@@ -1,8 +1,3 @@
-"""qualifier module.
-
-
-"""
-
 import collections
 import functools
 import itertools
@@ -27,7 +22,7 @@ class Qualifier:
     """
 
     _BEGIN_PATTERN = re.compile(
-        r'^(?P<prefix>\s*\S+)\s+BEGIN\s+(?P<quality>\S+)')
+        r'^\s*(?P<prefix>\S+)\s+BEGIN\s+(?P<quality>\S+)')
     _EOF = object()
 
     def __init__(self, qualities):
@@ -167,9 +162,12 @@ class _CommentPrefix:
 
     """
 
+    _INDENT_PATTERN = re.compile(r'')
+
     def __init__(self, comment_prefix):
         self.comment_prefix = comment_prefix
-        self._prefix_pattern = re.compile(r'^{}'.format(comment_prefix))
+        self._prefix_pattern = re.compile(
+            r'^(?P<indent>\s*){}'.format(comment_prefix))
 
     def __str__(self):
         return self.comment_prefix
@@ -205,12 +203,39 @@ class _CommentPrefix:
         """
         pattern = self._prefix_pattern
         while self.is_commented(lines):
-            lines = [pattern.sub('', line) for line in lines]
+            lines = [pattern.sub('\g<indent>', line) for line in lines]
         return lines
 
     def comment(self, lines):
         """Comment lines."""
         if not self.is_commented(lines):
+            indent = _common_indent(lines)
+            indent_len = len(indent)
             prefix = self.comment_prefix
-            lines = [prefix + line for line in lines]
+            lines = [indent + prefix + line[indent_len:] for line in lines]
         return lines
+
+
+_INDENT_PATTERN = re.compile(r'^\s*')
+
+
+def _get_indent(line):
+    """Return indentation string of line."""
+    return _INDENT_PATTERN.search(line).group(0)
+
+
+def _common_indent(lines):
+    """Find common indentation of given lines."""
+    lines = iter(lines)
+    try:
+        line = next(lines)
+    except StopIteration:
+        return ''
+    indent = _get_indent(line)
+    for line in lines:
+        new_indent = _get_indent(line)
+        indent = ''.join(
+            x[0] for x in
+            itertools.takewhile(lambda x: x[0] == x[1],
+                                zip(indent, new_indent)))
+    return indent
