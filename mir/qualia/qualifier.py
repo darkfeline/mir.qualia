@@ -22,7 +22,7 @@ class Qualifier:
     """
 
     _BEGIN_PATTERN = re.compile(
-        r'^\s*(?P<prefix>\S+)\s+BEGIN\s+(?P<quality>\S+)')
+        r'^\s*(?P<prefix>\S+)\s*BEGIN\s+(?P<quality>\S+)')
     _EOF = object()
 
     def __init__(self, qualities):
@@ -108,7 +108,7 @@ def _get_end_pattern(attrs):
         attrs: A _BlockAttributes instance.
 
     """
-    return re.compile(r'{attrs.prefix}\s+END\s+{attrs.quality}'.format(
+    return re.compile(r'{attrs.prefix}\s*END\s+{attrs.quality}'.format(
         attrs=attrs))
 
 

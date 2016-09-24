@@ -83,6 +83,18 @@ _QualifierTest = collections.namedtuple('_QualifierTest',
             expected=(
                 'spam\n'),
             msg='ignore unqualified line'),
+
+        _QualifierTest(
+            qualities=['spam'],
+            text=(
+                '#BEGIN spam\n'
+                '#spam\n'
+                '#END spam\n'),
+            expected=(
+                '#BEGIN spam\n'
+                'spam\n'
+                '#END spam\n'),
+            msg='recognize BEGIN without whitespace before'),
     ])
 def test_qualifier(qualities, text, expected, msg):
     lines = text.splitlines(keepends=True)

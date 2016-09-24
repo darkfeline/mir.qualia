@@ -3,6 +3,15 @@ Release notes
 
 This project uses `semantic versioning <http://semver.org/>`_.
 
+master
+------
+
+Changed
+^^^^^^^
+
+- BEGIN and END no longer require whitespace between them and the preceding
+  comment characters.
+
 0.5.0
 -----
 
