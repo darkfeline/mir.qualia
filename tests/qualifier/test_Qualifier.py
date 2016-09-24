@@ -1,65 +1,91 @@
+import collections
+
 import pytest
 
 from mir.qualia import qualifier
 
-_BASE_TEXT = """\
-# BEGIN spam
-#spam
-# END spam
 
-# BEGIN eggs
-#eggs
-# END eggs
-""".splitlines(True)
-
-_SPAM_TEXT = """\
-# BEGIN spam
-spam
-# END spam
-
-# BEGIN eggs
-#eggs
-# END eggs
-""".splitlines(True)
-
-_EGGS_TEXT = """\
-# BEGIN spam
-#spam
-# END spam
-
-# BEGIN eggs
-eggs
-# END eggs
-""".splitlines(True)
-
-_FULL_TEXT = """\
-# BEGIN spam
-spam
-# END spam
-
-# BEGIN eggs
-eggs
-# END eggs
-""".splitlines(True)
-
-_UNCLOSED_TEXT = """\
-# BEGIN spam
-#spam
-
-# BEGIN eggs
-#eggs
-# END eggs
-""".splitlines(True)
+_QUALIFIER_TEST_PARAMS = 'qualities,text,expected,msg'
+_QualifierTest = collections.namedtuple('_QualifierTest',
+                                        _QUALIFIER_TEST_PARAMS)
 
 
 @pytest.mark.parametrize(
-    'qualities,lines,expected', [
-        ([], _BASE_TEXT, _BASE_TEXT),
-        (['spam'], _BASE_TEXT, _SPAM_TEXT),
-        (['eggs'], _BASE_TEXT, _EGGS_TEXT),
-        (['spam', 'eggs'], _BASE_TEXT, _FULL_TEXT),
-        (['spam', 'eggs'], _UNCLOSED_TEXT, _UNCLOSED_TEXT),
+    _QUALIFIER_TEST_PARAMS, [
+        _QualifierTest(
+            qualities=[],
+            text=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# END spam\n'),
+            expected=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# END spam\n'),
+            msg='inactive quality idempotence'),
+
+        _QualifierTest(
+            qualities=['spam'],
+            text=(
+                '# BEGIN spam\n'
+                'spam\n'
+                '# END spam\n'),
+            expected=(
+                '# BEGIN spam\n'
+                'spam\n'
+                '# END spam\n'),
+            msg='active quality idempotence'),
+
+        _QualifierTest(
+            qualities=['spam'],
+            text=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# END spam\n'),
+            expected=(
+                '# BEGIN spam\n'
+                'spam\n'
+                '# END spam\n'),
+            msg='activating quality'),
+
+        _QualifierTest(
+            qualities=[],
+            text=(
+                '# BEGIN spam\n'
+                'spam\n'
+                '# END spam\n'),
+            expected=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# END spam\n'),
+            msg='deactivating quality'),
+
+        _QualifierTest(
+            qualities=['spam', 'eggs'],
+            text=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# BEGIN eggs\n'
+                '#eggs\n'
+                '# END eggs\n'),
+            expected=(
+                '# BEGIN spam\n'
+                '#spam\n'
+                '# BEGIN eggs\n'
+                '#eggs\n'
+                '# END eggs\n'),
+            msg='ignore unclosed blocks'),
+
+        _QualifierTest(
+            qualities=[],
+            text=(
+                'spam\n'),
+            expected=(
+                'spam\n'),
+            msg='ignore unqualified line'),
     ])
-def test_qualifier(qualities, lines, expected):
+def test_qualifier(qualities, text, expected, msg):
+    lines = text.splitlines(keepends=True)
+    expected_lines = expected.splitlines(keepends=True)
     qual = qualifier.Qualifier(qualities)
-    assert list(qual(lines)) == expected
+    assert list(qual(lines)) == expected_lines, msg
