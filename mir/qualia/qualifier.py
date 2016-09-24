@@ -217,14 +217,6 @@ class _CommentPrefix:
         return lines
 
 
-_INDENT_PATTERN = re.compile(r'^\s*')
-
-
-def _get_indent(line):
-    """Return indentation string of line."""
-    return _INDENT_PATTERN.search(line).group(0)
-
-
 def _common_indent(lines):
     """Find common indentation of given lines."""
     lines = iter(lines)
@@ -235,8 +227,20 @@ def _common_indent(lines):
     indent = _get_indent(line)
     for line in lines:
         new_indent = _get_indent(line)
-        indent = ''.join(
-            x[0] for x in
-            itertools.takewhile(lambda x: x[0] == x[1],
-                                zip(indent, new_indent)))
+        indent = ''.join(_find_common_prefix(indent, new_indent))
     return indent
+
+
+_INDENT_PATTERN = re.compile(r'^\s*')
+
+
+def _get_indent(line):
+    """Return indentation string of line."""
+    return _INDENT_PATTERN.search(line).group(0)
+
+
+def _find_common_prefix(first, second):
+    """Find the common prefix of two iterables."""
+    yield from (x[0] for x in
+            itertools.takewhile(lambda x: x[0] == x[1],
+                                zip(first, second)))
