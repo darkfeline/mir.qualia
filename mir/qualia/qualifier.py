@@ -8,7 +8,7 @@ class Qualifier:
 
     """Qualify lines.
 
-    A Qualifier takes lines of text that may contain qualified blocks of the form::
+    A Qualifier takes lines of text that may contain qualified blocks of the form:
 
        # BEGIN quality_name
        lines in block
