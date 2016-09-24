@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='mir.qualia',
-    version='0.5.0',
+    version='0.6.0',
     description='Dynamically enable sections of config files.',
     long_description='',
     keywords='',
@@ -24,7 +24,7 @@ setup(
     author='Allen Li',
     author_email='darkfeline@felesatra.moe',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: Apache Software License',
