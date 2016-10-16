@@ -43,66 +43,66 @@ containing the following::
 
   # BEGIN laptop
   alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 Here is the output from qualia::
 
   $ qualia <infile
   # BEGIN laptop
   #alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   #alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 ::
 
   $ qualia laptop <infile
   # BEGIN laptop
   alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   #alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 ::
 
   $ qualia desktop <infile
   # BEGIN laptop
   #alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 ::
 
   $ qualia laptop desktop <infile
   # BEGIN laptop
   alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 qualia is idempotent, so you can run it multiple times; only the last time takes effect::
 
   $ qualia <infile | qualia laptop | qualia desktop | qualia laptop
   # BEGIN laptop
   alias home="cd /home/bob"
-  # BEGIN laptop
+  # END laptop
 
   # BEGIN desktop
   #alias home="cd /home/robert"
-  # BEGIN desktop
+  # END desktop
 
 Using qualia with Git filters
 -----------------------------
@@ -127,7 +127,7 @@ Here's an example setup::
 On each of your machines, clone your dotfiles repository and run::
 
   $ git config filter.qualia.clean qualia
-  $ git config filter.qualia.smudge qualia [qualities]
+  $ git config filter.qualia.smudge "qualia [qualities]"
 
 Now, whenever you check out, commit, pull and push your dotfiles around, your
 machine specific configuration will always be correctly commented and
