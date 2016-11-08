@@ -137,5 +137,5 @@ Note that because Git applies its filters when files are checked out or
 committed, you may need to force Git to apply the filters when you first set
 this up::
 
-  $ git checkout HEAD^
-  $ git checkout master
+  $ rm .git/index
+  $ git checkout HEAD -- "$(git rev-parse --show-toplevel)"
