@@ -18,7 +18,9 @@ import sys
 from mir.qualia import qualifier
 
 
-def main():
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
     parser = argparse.ArgumentParser()
     parser.add_argument('qualities', nargs='*')
     args = parser.parse_args()
