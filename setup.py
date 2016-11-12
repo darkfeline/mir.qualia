@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='mir.qualia',
-    version='0.6.0',
+    version='0.7.0',
     description='Dynamically enable sections of config files.',
     long_description='',
     keywords='',
