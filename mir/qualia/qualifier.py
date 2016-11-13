@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-import functools
-import itertools
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 class Qualifier:
 
     """Qualify lines.
 
-    A Qualifier takes lines of text that may contain qualified blocks of the form:
+    A Qualifier takes lines of text that may contain qualified blocks of the
+    form:
 
        # BEGIN quality_name
        lines in block
@@ -32,7 +33,6 @@ class Qualifier:
     the qualities of the Qualifier instance.
 
     Qualifier is implemented as a generator, so processing is done lazily.
-
     """
 
     _BEGIN_PATTERN = re.compile(
@@ -47,118 +47,103 @@ class Qualifier:
             cls=type(self).__qualname__, this=self)
 
     def __call__(self, lines):
-        processor = self._processor()
-        next(processor)
-        self._output_queue = output_queue = _IteratorQueue()
-        for line in itertools.chain(lines, [self._EOF]):
-            processor.send(line)
-            yield from output_queue
+        """Qualify lines.
 
-    def _processor(self):
-        """State machine coroutine.
-
-        This implements the state machine for parsing and transforming
-        qualified blocks using coroutines.
-
+        `lines` is an iterable of strings.
         """
-        while True:
-            line = yield
-            if line is self._EOF:
-                break
-            else:
-                yield from self._process_line(line)
+        lines = iter(lines)
+        from_begin_line = _BlockAttributes.from_begin_line
+        for line in lines:
+            logger.debug('Yielding line %r', line)
+            yield line
+            block_attrs = from_begin_line(line)
+            if block_attrs:
+                logger.debug('Entering block')
+                yield from self._qualify_block(block_attrs, lines)
 
-    def _process_line(self, line):
-        """Process single line in the normal state."""
-        self._output_queue.append(line)
-        match = self._BEGIN_PATTERN.search(line)
-        if match:
-            attrs = _BlockAttributes(*match.group('prefix', 'quality'))
-            yield from self._process_qualified_block(attrs)
+    def _qualify_block(self, attrs, rest):
+        """Qualify lines in a block.
 
-    def _process_qualified_block(self, attrs):
-        """Process lines in a qualified block.
-
-        Args:
-            attrs: A _BlockAttributes instance.
-
+        `attrs` is a _BlockAttributes instance.  `rest` is an iterator of
+        remaining lines.
         """
         block_lines = []
-        pattern = _get_end_pattern(attrs)
-        while True:
-            line = yield
-            if line is self._EOF:
-                self._output_queue.extend(block_lines)
+        is_end_line = attrs.is_end_line
+        for line in rest:
+            if is_end_line(line):
+                yield from self._close_qualified_block(attrs, block_lines)
+                logger.debug('Yielding %r', line)
+                yield line
                 break
             else:
-                match = pattern.search(line)
-                if match is None:
-                    block_lines.append(line)
-                else:
-                    self._close_qualified_block(attrs, block_lines)
-                    self._output_queue.append(line)
-                    break
+                logger.debug('Queuing line %r', line)
+                block_lines.append(line)
+        else:
+            # We reached EOF without seeing an end line (an incomplete block).
+            # We dump all the lines that we were holding without extra
+            # processing.
+            logger.debug('Reached end, dumping lines')
+            yield from block_lines
 
     def _close_qualified_block(self, attrs, block_lines):
         """Emit the lines of the parse qualified block according to qualities.
 
         Args:
             attrs: A _BlockAttributes instance.
-            block_lines: A list of strings, the lines inside the block.
-
+            block_lines: A sequence of lines inside the block.
         """
-        prefix = _CommentPrefix(attrs.prefix)
         if attrs.quality in self.qualities:
-            self._output_queue.extend(prefix.uncomment(block_lines))
+            yield from attrs.comment_prefix.uncomment(block_lines)
         else:
-            self._output_queue.extend(prefix.comment(block_lines))
+            yield from attrs.comment_prefix.comment(block_lines)
 
 
-@functools.lru_cache(maxsize=8)
-def _get_end_pattern(attrs):
-    """Get compiled RE end pattern for given block attributes.
+class _BlockAttributes:
 
-    Args:
-        attrs: A _BlockAttributes instance.
+    """Attributes for a qualified block.
 
+    `prefix` is the comment prefix preceding the BEGIN and END keywords.
+    `quality` is the quality name for the block.
     """
-    return re.compile(r'{attrs.prefix}\s*END\s+{attrs.quality}'.format(
-        attrs=attrs))
 
+    __slots__ = ('prefix', 'quality', '_end_pattern')
+    _BEGIN = r'^\s*(?P<prefix>\S+)\s*BEGIN\s+(?P<quality>\S+)'
+    _END = r'^\s*{prefix}\s*END\s+{quality}'
+    _BEGIN_PATTERN = re.compile(_BEGIN)
 
-_BlockAttributes = collections.namedtuple(
-    '_BlockAttributes', 'prefix quality')
-
-
-class _IteratorQueue:
-
-    """A queue that accessed via iteration."""
-
-    def __init__(self, iterable=()):
-        self.queue = collections.deque(iterable)
+    def __init__(self, prefix, quality):
+        self.prefix = prefix
+        self.quality = quality
+        self._end_pattern = re.compile(
+            self._END.format(prefix=re.escape(prefix),
+                             quality=re.escape(quality)))
 
     def __repr__(self):
-        return '<{cls} id=0x{id:x} queue={queue!r}>'.format(
-            cls=type(self).__qualname__,
-            id=id(self),
-            queue=self.queue)
+        return ('{cls}(prefix={this.prefix!r}, quality={this.quality!r})'
+                .format(
+                    cls=type(self).__qualname__,
+                    this=self))
 
-    def __iter__(self):
-        return self
+    @classmethod
+    def from_begin_line(cls, line):
+        """Instantiate an instance from a begin line.
 
-    def __next__(self):
-        if self.queue:
-            return self.queue.popleft()
+        Return None if the line isn't a begin line.
+        """
+        match = cls._BEGIN_PATTERN.search(line)
+        if match:
+            return cls(*match.group('prefix', 'quality'))
         else:
-            raise StopIteration
+            return None
 
-    def append(self, obj):
-        """Add object to the queue."""
-        self.queue.append(obj)
+    def is_end_line(self, line):
+        """Return a true value if line is an end line for this block."""
+        return self._end_pattern.search(line)
 
-    def extend(self, iterable):
-        """Add objects in the given iterable to the queue."""
-        self.queue.extend(iterable)
+    @property
+    def comment_prefix(self):
+        """Return a _CommentPrefix instance corresponding to this block."""
+        return _CommentPrefix(self.prefix)
 
 
 class _CommentPrefix:
@@ -174,18 +159,12 @@ class _CommentPrefix:
     False
 
     Do not modify the comment_prefix attribute on an instance.
-
     """
-
-    _INDENT_PATTERN = re.compile(r'')
 
     def __init__(self, comment_prefix):
         self.comment_prefix = comment_prefix
         self._prefix_pattern = re.compile(
-            r'^(?P<indent>\s*){}'.format(comment_prefix))
-
-    def __str__(self):
-        return self.comment_prefix
+            r'^(?P<indent>\s*)' + re.escape(comment_prefix))
 
     def __repr__(self):
         return '{cls}({this.comment_prefix!r})'.format(
@@ -197,7 +176,7 @@ class _CommentPrefix:
         return all(pattern.search(line) for line in lines)
 
     def uncomment(self, lines):
-        r"""Uncomment lines.
+        r"""Uncomment a sequence of lines.
 
         This will keep uncommenting so long as the lines are all commented.
         This is so that uncommenting is an idempotent operation.
@@ -214,47 +193,93 @@ class _CommentPrefix:
         >>> prefix = _CommentPrefix('#')
         >>> prefix.uncomment(['##foo\n', '##bar\n', '#\n'])
         ['#foo\n', '#bar\n', '\n']
-
         """
-        pattern = self._prefix_pattern
+        if not lines:
+            return []
         while self.is_commented(lines):
-            lines = [pattern.sub(r'\g<indent>', line) for line in lines]
+            lines = self._uncomment(lines)
         return lines
+
+    def _uncomment(self, lines):
+        """Unconditionally uncomment a sequence of lines once."""
+        return [self._prefix_pattern.sub(r'\g<indent>', line)
+                for line in lines]
 
     def comment(self, lines):
-        """Comment lines."""
+        """Comment a sequence of lines."""
         if not self.is_commented(lines):
-            indent = _common_indent(lines)
-            indent_len = len(indent)
-            prefix = self.comment_prefix
-            lines = [indent + prefix + line[indent_len:] for line in lines]
+            return self._comment(lines)
         return lines
+
+    def _comment(self, lines):
+        """Unconditionally comment a sequence of lines."""
+        indent = _common_indent(lines)
+        indent_len = len(indent)
+        prefix = self.comment_prefix
+        return [indent + prefix + line[indent_len:] for line in lines]
 
 
 def _common_indent(lines):
-    """Find common indentation of given lines."""
-    lines = iter(lines)
-    try:
-        line = next(lines)
-    except StopIteration:
+    """Find common indent of a sequence of lines."""
+    if not lines:
         return ''
-    indent = _get_indent(line)
-    for line in lines:
-        new_indent = _get_indent(line)
-        indent = ''.join(_find_common_prefix(indent, new_indent))
-    return indent
+    finder = _CommonIndentFinder(lines[0])
+    for line in lines[1:]:
+        finder.feed(line)
+    return finder.prefix
 
 
-_INDENT_PATTERN = re.compile(r'^\s*')
+class _CommonPrefixFinder:
+
+    """Find common prefix of any number of strings.
+
+    Starting with an initial string, additional strings are fed into a
+    _CommonPrefixFinder instance, shortening the common prefix.  The current
+    running common prefix is stored in the `prefix` instance attribute.
+    """
+
+    def __init__(self, initial):
+        """Initialize instance.
+
+        initial is the initial prefix string.
+        """
+        self.prefix = initial
+
+    def __repr__(self):
+        return '{cls}({this.prefix!r})'.format(
+            cls=type(self).__qualname__,
+            this=self)
+
+    def feed(self, string):
+        """Feed another string to find the common prefix of."""
+        self.prefix = ''.join(_take_while_eq(self.prefix, string))
 
 
-def _get_indent(line):
-    """Return indentation string of line."""
-    return _INDENT_PATTERN.search(line).group(0)
+def _take_while_eq(first, second):
+    """Iterate over two iterables while their values are equal."""
+    for x, y in zip(first, second):
+        if x == y:
+            yield x
+        else:
+            return
 
 
-def _find_common_prefix(first, second):
-    """Find the common prefix of two iterables."""
-    yield from (x[0] for x in
-            itertools.takewhile(lambda x: x[0] == x[1],
-                                zip(first, second)))
+class _CommonIndentFinder(_CommonPrefixFinder):
+
+    """Find the common prefix of any number of strings.
+
+    _CommonPrefixFinder behaves mostly like the superclass, except only strings
+    are allowed, and the common prefix is automatically trimmed down to leading
+    whitespace (indentation).
+    """
+
+    _INDENT_PATTERN = re.compile(r'^\s*')
+
+    @property
+    def prefix(self):
+        return self.__dict__['prefix']
+
+    @prefix.setter
+    def prefix(self, line):
+        indent = self._INDENT_PATTERN.search(line).group(0)
+        self.__dict__['prefix'] = indent
