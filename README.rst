@@ -38,62 +38,20 @@ qualia is a filter script, so it is used by redirecting stdin and stdout::
 
   $ qualia [qualities] <infile >outfile
 
-Here is an example of how qualia works.  Let's say you have a ``.bashrc``
-containing the following::
+qualia recognizes special blocks (called qualified blocks) and
+comments or uncomments them.  A qualified block looks like this::
 
   # BEGIN laptop
-  alias home="cd /home/bob"
+  export PATH="$HOME/bin:$PATH"
   # END laptop
 
-  # BEGIN desktop
-  alias home="cd /home/robert"
-  # END desktop
+The quality of this block is ``laptop``.  If ``laptop``
+is given as a quality, then qualia will make sure the contents of the
+block are uncommented.  If ``laptop`` isn't given as a quality, then
+qualia will makes sure the contents of the block are commented.
 
-Here is the output from qualia::
-
-  $ qualia <infile
-  # BEGIN laptop
-  #alias home="cd /home/bob"
-  # END laptop
-
-  # BEGIN desktop
-  #alias home="cd /home/robert"
-  # END desktop
-
-::
-
-  $ qualia laptop <infile
-  # BEGIN laptop
-  alias home="cd /home/bob"
-  # END laptop
-
-  # BEGIN desktop
-  #alias home="cd /home/robert"
-  # END desktop
-
-::
-
-  $ qualia desktop <infile
-  # BEGIN laptop
-  #alias home="cd /home/bob"
-  # END laptop
-
-  # BEGIN desktop
-  alias home="cd /home/robert"
-  # END desktop
-
-::
-
-  $ qualia laptop desktop <infile
-  # BEGIN laptop
-  alias home="cd /home/bob"
-  # END laptop
-
-  # BEGIN desktop
-  alias home="cd /home/robert"
-  # END desktop
-
-qualia is idempotent, so you can run it multiple times; only the last time takes effect::
+qualia is idempotent, so you can run it multiple times; only the last
+time takes effect::
 
   $ qualia <infile | qualia laptop | qualia desktop | qualia laptop
   # BEGIN laptop
@@ -139,3 +97,11 @@ this up::
 
   $ rm .git/index
   $ git checkout HEAD -- "$(git rev-parse --show-toplevel)"
+
+Specification
+-------------
+
+mir.qualia uses `semantic versioning <http://semver.org/>`_.  The
+block qualification behavior is specified by the tests in
+``tests/test_Qualifier.py``.  Major version compatible changes will
+not change these tests.
