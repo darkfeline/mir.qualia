@@ -6,6 +6,11 @@ This project uses `semantic versioning <http://semver.org/>`_.
 1.0.0
 -----
 
+Changed
+^^^^^^^
+
+- mir.qualia is now formally specified by ``Qualifier`` tests.
+
 0.6.0
 -----
 
