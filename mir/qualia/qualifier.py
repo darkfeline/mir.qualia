@@ -37,10 +37,6 @@ class Qualifier:
     Qualifier is implemented as a generator, so processing is done lazily.
     """
 
-    _BEGIN_PATTERN = re.compile(
-        r'^\s*(?P<prefix>\S+)\s*BEGIN\s+(?P<quality>\S+)')
-    _EOF = object()
-
     def __init__(self, qualities):
         self._qualities = qualities
 
