@@ -9,7 +9,7 @@ mir.qualia
    :alt: Codecov
 .. image:: https://badge.fury.io/py/mir.qualia.svg
    :target: https://badge.fury.io/py/mir.qualia
-   :alt: PyPi Release
+   :alt: PyPI Release
 
 ..
 
@@ -32,7 +32,7 @@ repository and check out the right copy on each machine.
 Installation
 ------------
 
-Installing from PyPi is recommended::
+Installing from PyPI is recommended::
 
   $ pip3 install mir.qualia
 
