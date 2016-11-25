@@ -42,10 +42,10 @@ class Qualifier:
     _EOF = object()
 
     def __init__(self, qualities):
-        self.qualities = qualities
+        self._qualities = qualities
 
     def __repr__(self):
-        return '{cls}(qualities={this.qualities!r})'.format(
+        return '{cls}(qualities={this._qualities!r})'.format(
             cls=type(self).__qualname__, this=self)
 
     def __call__(self, lines):
@@ -95,7 +95,7 @@ class Qualifier:
             block_lines: A sequence of lines inside the block.
         """
         prefix = attrs.get_comment_prefix()
-        if attrs.is_active(self.qualities):
+        if attrs.is_active(self._qualities):
             yield from prefix.uncomment(block_lines)
         else:
             yield from prefix.comment(block_lines)
