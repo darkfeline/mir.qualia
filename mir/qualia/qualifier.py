@@ -148,5 +148,5 @@ class _BlockAttributes:
         return self._quality in qualities
 
     def get_comment_prefix(self):
-        """Return a _CommentPrefix instance corresponding to this block."""
+        """Return a CommentPrefix instance corresponding to this block."""
         return CommentPrefix(self._prefix)
