@@ -94,10 +94,11 @@ class Qualifier:
             attrs: A _BlockAttributes instance.
             block_lines: A sequence of lines inside the block.
         """
-        if attrs.quality in self.qualities:
-            yield from attrs.comment_prefix.uncomment(block_lines)
+        prefix = attrs.get_comment_prefix()
+        if attrs.is_active(self.qualities):
+            yield from prefix.uncomment(block_lines)
         else:
-            yield from attrs.comment_prefix.comment(block_lines)
+            yield from prefix.comment(block_lines)
 
 
 class _BlockAttributes:
@@ -108,20 +109,20 @@ class _BlockAttributes:
     `quality` is the quality name for the block.
     """
 
-    __slots__ = ('prefix', 'quality', '_end_pattern')
+    __slots__ = ('_prefix', '_quality', '_end_pattern')
     _BEGIN = r'^\s*(?P<prefix>\S+)\s*BEGIN\s+(?P<quality>\S+)'
     _END = r'^\s*{prefix}\s*END\s+{quality}'
     _BEGIN_PATTERN = re.compile(_BEGIN)
 
     def __init__(self, prefix, quality):
-        self.prefix = prefix
-        self.quality = quality
+        self._prefix = prefix
+        self._quality = quality
         self._end_pattern = re.compile(
             self._END.format(prefix=re.escape(prefix),
                              quality=re.escape(quality)))
 
     def __repr__(self):
-        return ('{cls}(prefix={this.prefix!r}, quality={this.quality!r})'
+        return ('{cls}(prefix={this._prefix!r}, quality={this._quality!r})'
                 .format(
                     cls=type(self).__qualname__,
                     this=self))
@@ -142,7 +143,10 @@ class _BlockAttributes:
         """Return a true value if line is an end line for this block."""
         return self._end_pattern.search(line)
 
-    @property
-    def comment_prefix(self):
+    def is_active(self, qualities):
+        """Return whether the block is active under the given qualities."""
+        return self._quality in qualities
+
+    def get_comment_prefix(self):
         """Return a _CommentPrefix instance corresponding to this block."""
-        return CommentPrefix(self.prefix)
+        return CommentPrefix(self._prefix)
