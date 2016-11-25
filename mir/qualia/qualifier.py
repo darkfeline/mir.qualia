@@ -15,7 +15,7 @@
 import logging
 import re
 
-from mir.qualia.indent import common_indent
+from mir.qualia.comment import CommentPrefix
 
 logger = logging.getLogger(__name__)
 
@@ -145,77 +145,4 @@ class _BlockAttributes:
     @property
     def comment_prefix(self):
         """Return a _CommentPrefix instance corresponding to this block."""
-        return _CommentPrefix(self.prefix)
-
-
-class _CommentPrefix:
-
-    r"""Comments and uncomments lines, given a prefix.
-
-    >>> prefix = _CommentPrefix('#')
-    >>> prefix.uncomment(['#export EDITOR=vi\n'])
-    ['export EDITOR=vi\n']
-    >>> prefix.comment(['export EDITOR=vi\n'])
-    ['#export EDITOR=vi\n']
-    >>> prefix.is_commented(['export EDITOR=vi\n'])
-    False
-
-    Do not modify the comment_prefix attribute on an instance.
-    """
-
-    def __init__(self, comment_prefix):
-        self.comment_prefix = comment_prefix
-        self._prefix_pattern = re.compile(
-            r'^(?P<indent>\s*)' + re.escape(comment_prefix))
-
-    def __repr__(self):
-        return '{cls}({this.comment_prefix!r})'.format(
-            cls=type(self).__qualname__, this=self)
-
-    def is_commented(self, lines):
-        """Return True if all lines are commented."""
-        pattern = self._prefix_pattern
-        return all(pattern.search(line) for line in lines)
-
-    def uncomment(self, lines):
-        r"""Uncomment a sequence of lines.
-
-        This will keep uncommenting so long as the lines are all commented.
-        This is so that uncommenting is an idempotent operation.
-
-        >>> prefix = _CommentPrefix('#')
-        >>> prefix.uncomment(['##foo\n', '##bar\n'])
-        ['foo\n', 'bar\n']
-        >>> prefix.uncomment(prefix.uncomment(['##foo\n', '##bar\n']))
-        ['foo\n', 'bar\n']
-
-        In almost all cases, this is desired behavior, but if you need to
-        preserve levels of commenting, include a line to protect them:
-
-        >>> prefix = _CommentPrefix('#')
-        >>> prefix.uncomment(['##foo\n', '##bar\n', '#\n'])
-        ['#foo\n', '#bar\n', '\n']
-        """
-        if not lines:
-            return []
-        while self.is_commented(lines):
-            lines = self._uncomment(lines)
-        return lines
-
-    def _uncomment(self, lines):
-        """Unconditionally uncomment a sequence of lines once."""
-        return [self._prefix_pattern.sub(r'\g<indent>', line)
-                for line in lines]
-
-    def comment(self, lines):
-        """Comment a sequence of lines."""
-        if not self.is_commented(lines):
-            return self._comment(lines)
-        return lines
-
-    def _comment(self, lines):
-        """Unconditionally comment a sequence of lines."""
-        indent = common_indent(lines)
-        indent_len = len(indent)
-        prefix = self.comment_prefix
-        return [indent + prefix + line[indent_len:] for line in lines]
+        return CommentPrefix(self.prefix)
