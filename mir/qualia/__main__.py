@@ -26,5 +26,6 @@ def main():
     for line in qual(sys.stdin):
         sys.stdout.write(line)
 
+
 if __name__ == '__main__':
     main()
