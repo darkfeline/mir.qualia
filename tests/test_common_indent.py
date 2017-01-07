@@ -41,6 +41,16 @@ def test_common_indent():
     assert got == ' '
 
 
+def test_common_indent_one_line_no_indent():
+    got = indentlib.common_indent(['spam'])
+    assert got == ''
+
+
+def test_common_indent_one_line():
+    got = indentlib.common_indent(['  spam'])
+    assert got == '  '
+
+
 def test_CommonPrefixFinder_repr():
     finder = indentlib._CommonPrefixFinder('firis')
     assert repr(finder) == "_CommonPrefixFinder('firis')"

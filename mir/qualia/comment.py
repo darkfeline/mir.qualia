@@ -39,13 +39,13 @@ class CommentPrefix:
     """
 
     def __init__(self, comment_prefix):
-        self.comment_prefix = comment_prefix
+        self._comment_prefix = comment_prefix
         self._prefix_pattern = re.compile(
-            r'^(?P<indent>\s*)' + re.escape(comment_prefix))
+            fr'^(?P<indent>\s*){re.escape(comment_prefix)}')
 
     def __repr__(self):
-        return '{cls}({this.comment_prefix!r})'.format(
-            cls=type(self).__qualname__, this=self)
+        cls = type(self).__qualname__
+        return f'{cls}({self._comment_prefix!r})'
 
     def is_commented(self, lines):
         """Return True if all lines are commented."""
@@ -92,5 +92,5 @@ class CommentPrefix:
         """Unconditionally comment a sequence of lines."""
         indent = common_indent(lines)
         indent_len = len(indent)
-        prefix = self.comment_prefix
-        return [indent + prefix + line[indent_len:] for line in lines]
+        prefix = self._comment_prefix
+        return [f'{indent}{prefix}{line[indent_len:]}' for line in lines]

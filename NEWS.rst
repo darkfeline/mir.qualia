@@ -6,6 +6,11 @@ This project uses `semantic versioning <http://semver.org/>`_.
 1.0.1
 -----
 
+Changed
+^^^^^^^
+
+- Moved to Python 3.6
+
 1.0.0 (2016-11-13)
 ------------------
 

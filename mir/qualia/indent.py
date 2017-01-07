@@ -15,6 +15,7 @@
 """Find common indent of a sequence of lines.
 
 Functions:
+
 common_indent
 """
 
@@ -28,7 +29,7 @@ def common_indent(lines):
     finder = _CommonIndentFinder(lines[0])
     for line in lines[1:]:
         finder.feed(line)
-    return finder.prefix
+    return finder.get_prefix()
 
 
 class _CommonPrefixFinder:
@@ -45,16 +46,31 @@ class _CommonPrefixFinder:
 
         initial is the initial prefix string.
         """
-        self.prefix = initial
+        self._set_prefix(initial)
 
     def __repr__(self):
-        return '{cls}({this.prefix!r})'.format(
-            cls=type(self).__qualname__,
-            this=self)
+        cls = type(self).__qualname__
+        return f'{cls}({self._prefix!r})'
 
     def feed(self, string):
         """Feed another string to find the common prefix of."""
-        self.prefix = ''.join(_take_while_eq(self.prefix, string))
+        self._set_prefix(_find_common_prefix(self._prefix, string))
+
+    def get_prefix(self):
+        """Get the current common prefix."""
+        return self._prefix
+
+    def _set_prefix(self, value):
+        """Set the current common prefix.
+
+        This can be overridden in subclasses to do extra processing.
+        """
+        self._prefix = value
+
+
+def _find_common_prefix(first, second):
+    """Find the common prefix of two strings."""
+    return ''.join(_take_while_eq(first, second))
 
 
 def _take_while_eq(first, second):
@@ -66,6 +82,14 @@ def _take_while_eq(first, second):
             return
 
 
+_INDENT_PATTERN = re.compile(r'^\s*')
+
+
+def _find_indent(string):
+    """Find the indent of the string."""
+    return _INDENT_PATTERN.search(string).group(0)
+
+
 class _CommonIndentFinder(_CommonPrefixFinder):
 
     """Find the common prefix of any number of strings.
@@ -75,13 +99,5 @@ class _CommonIndentFinder(_CommonPrefixFinder):
     whitespace (indentation).
     """
 
-    _INDENT_PATTERN = re.compile(r'^\s*')
-
-    @property
-    def prefix(self):
-        return self.__dict__['prefix']
-
-    @prefix.setter
-    def prefix(self, line):
-        indent = self._INDENT_PATTERN.search(line).group(0)
-        self.__dict__['prefix'] = indent
+    def _set_prefix(self, value):
+        super()._set_prefix(_find_indent(value))
