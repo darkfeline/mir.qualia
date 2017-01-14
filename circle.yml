@@ -1,11 +1,9 @@
 machine:
   python:
-    version: 3.6.0b1
-dependencies:
-  override:
-    - pip3 install -r requirements.txt
-    - pip3 install -e .
+    version: 3.6.0
 test:
   override:
-    - py.test
+    - tox
+  post:
+    - mv .pytest $CIRCLE_TEST_REPORTS/pytest
     - bash <(curl -s https://codecov.io/bash)
