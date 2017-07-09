@@ -3,8 +3,8 @@ Release notes
 
 This project uses `semantic versioning <http://semver.org/>`_.
 
-1.0.1
------
+2.0.0 (2017-07-09)
+------------------
 
 Changed
 ^^^^^^^

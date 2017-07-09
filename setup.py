@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Allen Li
+# Copyright (C) 2016, 2017 Allen Li
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='mir.qualia',
-    version='1.0.1',
+    version='2.0.0',
     description='Dynamically enable sections of config files.',
     long_description='',
     keywords='',
@@ -24,7 +24,7 @@ setup(
     author='Allen Li',
     author_email='darkfeline@felesatra.moe',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'License :: OSI Approved :: Apache Software License',
