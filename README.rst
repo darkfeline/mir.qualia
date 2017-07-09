@@ -53,7 +53,7 @@ comments or uncomments them.  A qualified block looks like this::
 The quality of this block is ``laptop``.  If ``laptop``
 is given as a quality, then qualia will make sure the contents of the
 block are uncommented.  If ``laptop`` isn't given as a quality, then
-qualia will makes sure the contents of the block are commented.
+qualia will make sure the contents of the block are commented.
 
 qualia is idempotent, so you can run it multiple times; only the last
 time takes effect::
