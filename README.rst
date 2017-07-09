@@ -41,7 +41,7 @@ Basic usage
 
 qualia is a filter script, so it is used by redirecting stdin and stdout::
 
-  $ qualia [qualities] <infile >outfile
+  $ qualia [qualities...] <infile >outfile
 
 qualia recognizes special blocks (called qualified blocks) and
 comments or uncomments them.  A qualified block looks like this::
@@ -54,6 +54,11 @@ The quality of this block is ``laptop``.  If ``laptop``
 is given as a quality, then qualia will make sure the contents of the
 block are uncommented.  If ``laptop`` isn't given as a quality, then
 qualia will make sure the contents of the block are commented.
+
+It is possible to pass multiple qualities or no qualities::
+
+  $ qualia audio games
+  $ qualia
 
 qualia is idempotent, so you can run it multiple times; only the last
 time takes effect::
