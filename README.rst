@@ -78,7 +78,7 @@ Using qualia with Git filters
 qualia can be used with `Git filters`_ to automatically uncomment and comment
 the right blocks on different computers.
 
-_`Git filters`: https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes
+.. _Git filters: https://git-scm.com/book/en/v2/Customizing-Git-Git-Attributes
 
 Here's an example setup::
 
