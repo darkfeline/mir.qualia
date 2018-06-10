@@ -29,6 +29,10 @@ uncommenting blocks in files, for example configuration files (dotfiles).  This
 can be used to keep dotfiles for different machines in a single version control
 repository and check out the right copy on each machine.
 
+There is a `Go version <https://go.felesatra.moe/qualia>`_.  The main
+tradeoff is that the Go version is a lot faster, but compiles to a 2MB
+binary.
+
 Installation
 ------------
 
